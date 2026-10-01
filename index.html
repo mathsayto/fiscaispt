@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel de Fiscais - Eleições 2026</title>
+    <!-- Tailwind CSS para estilização rápida e responsiva -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome para ícones -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        ptred: '#cc0000', // Vermelho escuro característico
+                        ptredlight: '#ff1a1a',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Estilos adicionais para transições suaves */
+        .tab-content { display: none; }
+        .tab-content.active { display: block; animation: fadeIn 0.3s; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    </style>
+</head>
+<body class="bg-gray-100 font-sans min-h-screen flex flex-col">
+
+    <!-- Cabeçalho / Navegação -->
+    <header class="bg-ptred text-white shadow-lg">
+        <div class="container mx-auto px-4 py-4 flex flex-col md:flex-row justify-between items-center">
+            <div class="flex items-center space-x-3 mb-4 md:mb-0">
+                <i class="fa-solid fa-star text-2xl"></i>
+                <h1 class="text-2xl font-bold tracking-wider">COORDENAÇÃO DE FISCAIS 2026</h1>
+            </div>
+            <nav class="flex space-x-2 bg-white/20 p-1 rounded-lg">
+                <button onclick="switchTab('dashboard')" id="btn-dashboard" class="px-6 py-2 rounded-md bg-white text-ptred font-bold transition-colors">
+                    <i class="fa-solid fa-chart-pie mr-2"></i> Dashboard
+                </button>
+                <button onclick="switchTab('cadastro')" id="btn-cadastro" class="px-6 py-2 rounded-md text-white hover:bg-white/30 font-bold transition-colors">
+                    <i class="fa-solid fa-user-plus mr-2"></i> Adicionar Fiscal
+                </button>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Conteúdo Principal -->
+    <main class="container mx-auto px-4 py-8 flex-grow">
+
+        <!-- ABA 1: DASHBOARD -->
+        <section id="dashboard" class="tab-content active">
+            
+            <!-- Resumo (Cards) -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div class="bg-white rounded-lg shadow p-6 border-l-4 border-blue-500">
+                    <h3 class="text-gray-500 text-sm font-bold uppercase">Total de Escolas</h3>
+                    <p class="text-3xl font-bold text-gray-800" id="total-escolas">0</p>
+                </div>
+                <div class="bg-white rounded-lg shadow p-6 border-l-4 border-green-500">
+                    <h3 class="text-gray-500 text-sm font-bold uppercase">Escolas Cobertas</h3>
+                    <p class="text-3xl font-bold text-green-600" id="escolas-cobertas">0</p>
+                </div>
+                <div class="bg-white rounded-lg shadow p-6 border-l-4 border-ptred">
+                    <h3 class="text-gray-500 text-sm font-bold uppercase">Escolas Sem Fiscal</h3>
+                    <p class="text-3xl font-bold text-ptred" id="escolas-sem-fiscal">0</p>
+                </div>
+            </div>
+
+            <!-- Mapa e Pesquisa -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                <!-- Pesquisa -->
+                <div class="bg-white rounded-lg shadow p-6">
+                    <h2 class="text-xl font-bold text-gray-800 mb-4 border-b pb-2">
+                        <i class="fa-solid fa-search text-ptred mr-2"></i>Buscar Fiscal
+                    </h2>
+                    <div class="relative mb-4">
+                        <input type="text" id="search-input" onkeyup="searchFiscal()" placeholder="Digite o nome do fiscal..." 
+                               class="w-full pl-10 pr-4 py-3 rounded-lg border focus:outline-none focus:ring-2 focus:ring-ptred">
+                        <i class="fa-solid fa-user absolute left-3 top-4 text-gray-400"></i>
+                    </div>
+                    <div id="search-results" class="overflow-y-auto max-h-64 space-y-2">
+                        <!-- Resultados aparecem aqui -->
+                        <p class="text-gray-500 italic text-sm">Digite um nome para começar a busca.</p>
+                    </div>
+                </div>
+
+                <!-- Mapa -->
+                <div class="bg-white rounded-lg shadow overflow-hidden flex flex-col">
+                    <h2 class="text-xl font-bold text-gray-800 p-4 border-b bg-gray-50">
+                        <i class="fa-solid fa-map-location-dot text-ptred mr-2"></i>Mapa de Lotação
+                    </h2>
+                    <div class="flex-grow min-h-[300px]">
+                        <!-- SEU MAPA INCORPORADO AQUI -->
+                        <iframe src="https://www.google.com/maps/d/embed?mid=1PmDebKxxBiyDw7XSqo50-kyJ7e_nvlA&ehbc=2E312F" 
+                                width="100%" height="100%" style="border:none;" allowfullscreen></iframe>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Listas de Escolas -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <!-- Com Fiscal -->
+                <div class="bg-white rounded-lg shadow p-6">
+                    <h2 class="text-xl font-bold text-green-600 mb-4 border-b pb-2">
+                        <i class="fa-solid fa-check-circle mr-2"></i>Escolas com Fiscal
+                    </h2>
+                    <ul id="lista-com-fiscal" class="divide-y divide-gray-200 max-h-96 overflow-y-auto">
+                        <!-- Itens dinâmicos -->
+                    </ul>
+                </div>
+
+                <!-- Sem Fiscal -->
+                <div class="bg-white rounded-lg shadow p-6 border-2 border-red-100">
+                    <h2 class="text-xl font-bold text-ptred mb-4 border-b pb-2">
+                        <i class="fa-solid fa-triangle-exclamation mr-2"></i>Escolas SEM Fiscal
+                    </h2>
+                    <ul id="lista-sem-fiscal" class="divide-y divide-gray-200 max-h-96 overflow-y-auto">
+                        <!-- Itens dinâmicos -->
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- ABA 2: ADICIONAR FISCAL -->
+        <section id="cadastro" class="tab-content max-w-2xl mx-auto">
+            <div class="bg-white rounded-lg shadow-xl overflow-hidden">
+                <div class="bg-ptred text-white p-6 text-center">
+                    <i class="fa-solid fa-user-plus text-4xl mb-2"></i>
+                    <h2 class="text-2xl font-bold">Cadastrar Novo Fiscal</h2>
+                    <p class="text-red-100 mt-1">Preencha os dados para alocar um fiscal a uma escola</p>
+                </div>
+                
+                <form id="form-fiscal" onsubmit="cadastrarFiscal(event)" class="p-8 space-y-6">
+                    <div>
+                        <label class="block text-gray-700 font-bold mb-2" for="nome">Nome Completo *</label>
+                        <input type="text" id="nome" required class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-ptred">
+                    </div>
+
+                    <div>
+                        <label class="block text-gray-700 font-bold mb-2" for="telefone">Telefone / WhatsApp</label>
+                        <input type="text" id="telefone" placeholder="(00) 00000-0000" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-ptred">
+                    </div>
+
+                    <div>
+                        <label class="block text-gray-700 font-bold mb-2" for="titulo">Número do Título de Eleitor</label>
+                        <input type="text" id="titulo" placeholder="(00) 00000-0000" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-ptred">
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-gray-700 font-bold mb-2" for="zona">Zona Eleitoral</label>
+                            <input type="number" id="zona" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-ptred">
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 font-bold mb-2" for="secao">Seção</label>
+                            <input type="number" id="secao" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-ptred">
+                        </div>
+                    </div>
+
+                        <div>
+                            <label class="block text-gray-700 font-bold mb-2" for="status">Status</label>
+                            <input type="number" id="status" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-ptred">
+                        </div>
+                    
+
+
+                    <div>
+                        <label class="block text-gray-700 font-bold mb-2" for="ondavota">Local de votação *</label>
+                        <select id="ondevota" required class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-ptred bg-white">
+                            <option value="">Selecione uma escola...</option>
+                            <!-- Preenchido via JS -->
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-gray-700 font-bold mb-2" for="escola">Escola de Alocação *</label>
+                        <select id="escola" required class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-ptred bg-white">
+                            <option value="">Selecione uma escola...</option>
+                            <!-- Preenchido via JS -->
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-gray-700 font-bold mb-2" for="obs">Observação</label>
+                        <input type="text" id="telefone" placeholder="Adicionar observação" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-ptred">
+                    </div>
+
+                    <div class="pt-4">
+                        <button type="submit" class="w-full bg-ptred hover:bg-red-800 text-white font-bold py-3 px-4 rounded-lg shadow-lg transition-all transform hover:scale-[1.02]">
+                            <i class="fa-solid fa-save mr-2"></i> CADASTRAR FISCAL
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-gray-800 text-white text-center py-4 mt-auto">
+        <p class="text-sm">Painel de Coordenação de Fiscais &copy; 2026</p>
+    </footer>
+
+    <!-- LÓGICA DO APLICATIVO -->
+    <script>
+        // === BANCO DE DADOS SIMULADO (Substitui a Planilha no Front-end) ===
+        // Em um cenário real, estes dados viriam via fetch() do Google Apps Script
+        
+        const listaEscolas = [
+            "E.E. Professora Maria Alice",
+            "Colégio Estadual João XXIII",
+            "Escola Municipal Esperança",
+            "CIEP 400 - Paulo Freire",
+            "Centro Educacional Lutar e Vencer",
+            "E.M. Tiradentes",
+            "Instituto Federal - Campus Centro",
+            "Escola Dom Pedro II"
+        ];
+
+        let bancoFiscais = [
+            { nome: "Carlos Almeida", telefone: "(11) 98888-1111", zona: "10", secao: "45", escola: "E.E. Professora Maria Alice" },
+            { nome: "Ana Julia Sousa", telefone: "(11) 97777-2222", zona: "10", secao: "46", escola: "CIEP 400 - Paulo Freire" },
+            { nome: "Roberto Silva", telefone: "(11) 96666-3333", zona: "11", secao: "12", escola: "E.E. Professora Maria Alice" }
+        ];
+
+        // === INICIALIZAÇÃO ===
+        document.addEventListener('DOMContentLoaded', () => {
+            carregarDropdownEscolas();
+            atualizarDashboard();
+        });
+
+        // === NAVEGAÇÃO ENTRE ABAS ===
+        function switchTab(tabId) {
+            // Esconde todas
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            // Remove estilo ativo dos botões
+            document.getElementById('btn-dashboard').className = "px-6 py-2 rounded-md text-white hover:bg-white/30 font-bold transition-colors";
+            document.getElementById('btn-cadastro').className = "px-6 py-2 rounded-md text-white hover:bg-white/30 font-bold transition-colors";
+            
+            // Ativa a selecionada
+            document.getElementById(tabId).classList.add('active');
+            document.getElementById(`btn-${tabId}`).className = "px-6 py-2 rounded-md bg-white text-ptred font-bold transition-colors";
+        }
+
+        // === PREENCHER DROPDOWN DE ESCOLAS ===
+        function carregarDropdownEscolas() {
+            const select = document.getElementById('escola');
+            listaEscolas.sort().forEach(escola => {
+                const opt = document.createElement('option');
+                opt.value = escola;
+                opt.textContent = escola;
+                select.appendChild(opt);
+            });
+        }
+
+        // === LÓGICA DO DASHBOARD ===
+        function atualizarDashboard() {
+            const listaComFiscal = document.getElementById('lista-com-fiscal');
+            const listaSemFiscal = document.getElementById('lista-sem-fiscal');
+            
+            listaComFiscal.innerHTML = '';
+            listaSemFiscal.innerHTML = '';
+            
+            let countCobertas = 0;
+            let countSemCobertura = 0;
+
+            listaEscolas.sort().forEach(escola => {
+                // Filtra fiscais para esta escola
+                const fiscaisNaEscola = bancoFiscais.filter(f => f.escola === escola);
+                
+                const li = document.createElement('li');
+                li.className = "py-3 flex justify-between items-center";
+
+                if (fiscaisNaEscola.length > 0) {
+                    countCobertas++;
+                    li.innerHTML = `
+                        <span class="font-medium text-gray-800">${escola}</span>
+                        <span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full font-bold">
+                            ${fiscaisNaEscola.length} Fiscal(is)
+                        </span>
+                    `;
+                    listaComFiscal.appendChild(li);
+                } else {
+                    countSemCobertura++;
+                    li.innerHTML = `
+                        <span class="font-medium text-gray-800">${escola}</span>
+                        <span class="text-red-500 text-sm"><i class="fa-solid fa-xmark"></i> Descoberta</span>
+                    `;
+                    listaSemFiscal.appendChild(li);
+                }
+            });
+
+            // Atualiza os contadores no topo
+            document.getElementById('total-escolas').textContent = listaEscolas.length;
+            document.getElementById('escolas-cobertas').textContent = countCobertas;
+            document.getElementById('escolas-sem-fiscal').textContent = countSemCobertura;
+        }
+
+        // === BUSCA DE FISCAIS ===
+        function searchFiscal() {
+            const query = document.getElementById('search-input').value.toLowerCase();
+            const resultsDiv = document.getElementById('search-results');
+            resultsDiv.innerHTML = '';
+
+            if (query.trim() === '') {
+                resultsDiv.innerHTML = '<p class="text-gray-500 italic text-sm">Digite um nome para começar a busca.</p>';
+                return;
+            }
+
+            const resultados = bancoFiscais.filter(f => f.nome.toLowerCase().includes(query));
+
+            if (resultados.length === 0) {
+                resultsDiv.innerHTML = '<p class="text-red-500 text-sm">Nenhum fiscal encontrado.</p>';
+                return;
+            }
+
+            resultados.forEach(fiscal => {
+                const mapLink = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fiscal.escola)}`;
+                
+                const div = document.createElement('div');
+                div.className = "bg-gray-50 p-3 rounded border border-gray-200";
+                div.innerHTML = `
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="font-bold text-ptred">${fiscal.nome}</p>
+                            <p class="text-sm text-gray-600"><i class="fa-solid fa-school mr-1"></i> ${fiscal.escola}</p>
+                            <p class="text-xs text-gray-500">Tel: ${fiscal.telefone} | Zona: ${fiscal.zona} | Seç: ${fiscal.secao}</p>
+                        </div>
+                        <a href="${mapLink}" target="_blank" class="text-blue-500 hover:text-blue-700 p-2 bg-blue-50 rounded" title="Ver no Mapa">
+                            <i class="fa-solid fa-map-location-dot"></i>
+                        </a>
+                    </div>
+                `;
+                resultsDiv.appendChild(div);
+            });
+        }
+
+        // === CADASTRAR NOVO FISCAL ===
+        function cadastrarFiscal(event) {
+            event.preventDefault(); // Impede o recarregamento da página
+
+            // Coleta os dados do formulário
+            const novoFiscal = {
+                nome: document.getElementById('nome').value,
+                telefone: document.getElementById('telefone').value,
+                zona: document.getElementById('zona').value,
+                secao: document.getElementById('secao').value,
+                escola: document.getElementById('escola').value
+            };
+
+            // Adiciona ao banco de dados simulado
+            bancoFiscais.push(novoFiscal);
+
+            // Alerta de sucesso
+            alert(`✅ Fiscal ${novoFiscal.nome} alocado com sucesso na escola ${novoFiscal.escola}!`);
+
+            // Limpa o formulário
+            document.getElementById('form-fiscal').reset();
+
+            // Atualiza o Dashboard com o novo dado
+            atualizarDashboard();
+
+            // Volta para a aba Dashboard automaticamente
+            switchTab('dashboard');
+        }
+    </script>
+</body>
+</html>
